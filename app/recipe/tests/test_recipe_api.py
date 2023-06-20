@@ -36,6 +36,11 @@ def create_recipe(user, **params):
     return recipe
 
 
+def create_user(**params):
+    """Create and return a new user"""
+    return get_user_model().objects.create_user(**params)
+
+
 class PublicRecipeApiTests(TestCase):
     """Test unauthenticated API requests"""
 
@@ -53,10 +58,7 @@ class PrivateRecipeApiTests(TestCase):
 
     def setUp(self) -> None:
         self.client = APIClient()
-        self.user = get_user_model().objects.create_user(
-          email='test@example.com',
-          password='testpass123',
-        )
+        self.user = create_user(email='test@example.com', password='testpass123')
         self.client.force_authenticate(self.user)
 
     def test_retreive_recipes(self):
@@ -71,10 +73,7 @@ class PrivateRecipeApiTests(TestCase):
 
     def test_recipe_list_limited_for_user(self):
         """Test recipe list is limited to authenticated user"""
-        other_user = get_user_model().objects.create_user(
-          email='otheruser@example.com',
-          password='passtest123',
-        )
+        other_user = create_user(email='otheruser@example.com', password='testpass123')
         create_recipe(user=other_user)
         create_recipe(user=self.user)
         res = self.client.get(RECIPES_URL)
@@ -105,4 +104,23 @@ class PrivateRecipeApiTests(TestCase):
             if k == 'price':
                 v = Decimal(v)
             self.assertEqual(getattr(recipe, k), v)
+        self.assertEqual(recipe.user, self.user)
+
+    def test_partial_update(self):
+        """Test partial update recipe API"""
+        original_link = 'http://example.com/recipe.pdf'
+        recipe = create_recipe(
+            user=self.user,
+            title='Sample recipe',
+            link=original_link,
+        )
+        payload = {
+            'title': 'New recipe title',
+        }
+        url = detail_url(recipe.id)
+        res = self.client.patch(url, payload)
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        recipe.refresh_from_db()
+        self.assertEqual(recipe.title, payload['title'])
+        self.assertEqual(recipe.link, original_link)
         self.assertEqual(recipe.user, self.user)
