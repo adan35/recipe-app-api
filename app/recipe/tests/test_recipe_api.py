@@ -209,8 +209,8 @@ class PrivateRecipeApiTests(TestCase):
             exists = recipe.tags.filter(
                 name=tag['name'],
                 user=self.user,
-            )
-            self.assertEqual(exists)
+            ).exists()
+            self.assertTrue(exists)
 
     def test_create_recipe_with_existing_tag(self):
         """Test creating a recipe with existing tag"""
