@@ -56,7 +56,7 @@ class privateTagsApiTests(TestCase):
     def test_tag_limited_to_user(self):
         """Test list of tags limited to authenticated user"""
         new_user = create_user(
-            email='test1@example.com', 
+            email='test1@example.com',
             password='testpass123',
         )
         Tag.objects.create(user=new_user, name='Fruity')
